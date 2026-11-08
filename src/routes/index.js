@@ -6,6 +6,7 @@ import serviceRoutes from "./service.routes.js";
 import blogRoutes from "./blog.routes.js";
 import testimonialRoutes from "./testimonial.routes.js";
 import dashboardRoutes from "./dashboard.routes.js";
+import userRoutes from "./user.routes.js";
 
 const router = Router();
 
@@ -20,5 +21,6 @@ router.use("/services", serviceRoutes);
 router.use("/blog", blogRoutes);
 router.use("/testimonials", testimonialRoutes);
 router.use("/admin", dashboardRoutes);
+router.use("/users", userRoutes);
 
 export default router;

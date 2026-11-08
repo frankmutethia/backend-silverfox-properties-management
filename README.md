@@ -70,6 +70,14 @@ uploading the photos in `seed-assets/` to Cloudinary.
 `user` = `{ _id, name, email, contactEmail, phone, photo: { url, publicId, alt } | null, isActive, lastLoginAt, createdAt, updatedAt }`
 (`email` is the sign-in address; `contactEmail` / `phone` are the public contact details.)
 
+### Staff accounts (user management)
+| Method | Path | Body → `data` |
+| --- | --- | --- |
+| GET 🔒 | `/users` | `?page=&limit=` (default 50, oldest first) → `{ users, pagination }` |
+| POST 🔒 | `/users` | `{ name, email, password, confirmPassword }` (min 10 chars) → `201 { user }`. The new admin can sign in straight away and change the password from their profile |
+
+Every staff account is an admin. A duplicate sign-in email returns `409` with `errors: ["email: An account with this email already exists"]`.
+
 ### Media
 | Method | Path | Notes |
 | --- | --- | --- |
