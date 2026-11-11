@@ -14,14 +14,31 @@ export const Enquiry = mongoose.model("Enquiry", new mongoose.Schema({
   name: { type: String, required: true, maxlength: 100 },
   message: { type: String, required: true, maxlength: 5000 },
   emailStatus: { type: String, enum: ["pending", "sent", "failed"], default: "pending" },
+  // Why the last notification email failed, in words staff can act on. Null once sent.
+  emailError: { type: String, default: null, maxlength: 300 },
 }, { timestamps: true }));
+
+const CONNECTION_ERRORS = new Set(["ECONNECTION", "ETIMEDOUT", "ESOCKET", "EDNS", "ECONNREFUSED"]);
+
+export function describeEmailError(error) {
+  if (/not configured/i.test(error?.message ?? "")) {
+    return "Email sending isn't set up on the server yet (SMTP settings are missing).";
+  }
+  if (error?.code === "EAUTH") return "The email server rejected the sending account's username or password.";
+  if (CONNECTION_ERRORS.has(error?.code)) return "The server couldn't connect to the email server.";
+  if (error?.responseCode >= 500) return `The email server refused the message (code ${error.responseCode}).`;
+  return "The email couldn't be sent.";
+}
 
 async function notify(enquiry) {
   try {
     await sendEnquiryNotificationEmail(enquiry);
     enquiry.emailStatus = "sent";
-  } catch {
+    enquiry.emailError = null;
+  } catch (error) {
     enquiry.emailStatus = "failed";
+    enquiry.emailError = describeEmailError(error);
+    console.error(`[email] Enquiry ${enquiry._id} notification failed: ${error?.message ?? error}`);
   }
   await enquiry.save();
 }

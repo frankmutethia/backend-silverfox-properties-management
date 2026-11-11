@@ -13,5 +13,8 @@ test("public submissions are saved privately and visible to authenticated staff"
   assert.equal(enquiry.message, "Please explain your management services.");
   assert.notEqual(enquiry.emailStatus, "sent");
   await guest().post(`/api/v1/enquiries/${enquiry._id}/retry-email`).expect(401);
-  await staff.post(`/api/v1/enquiries/${enquiry._id}/retry-email`).expect(200);
+  const retried = await staff.post(`/api/v1/enquiries/${enquiry._id}/retry-email`).expect(200);
+  // The test server has no SMTP settings, so staff see exactly why the email was not sent.
+  assert.equal(retried.body.data.enquiry.emailStatus, "failed");
+  assert.equal(retried.body.data.enquiry.emailError, "Email sending isn't set up on the server yet (SMTP settings are missing).");
 });

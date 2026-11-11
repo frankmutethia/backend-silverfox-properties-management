@@ -2,10 +2,8 @@ import { readFile } from "fs/promises";
 import { fileURLToPath } from "url";
 import { env } from "../config/env.js";
 import { User } from "../models/User.model.js";
-import { Property } from "../models/Property.model.js";
-import { Service, ServiceCategory } from "../models/Service.model.js";
 import { Blog } from "../models/Blog.model.js";
-import { seedArticles, seedProperties, seedServiceCategories } from "../data/seedData.js";
+import { seedArticles } from "../data/seedData.js";
 import { escapeHtml } from "../utils/sanitize.js";
 import { uploadToCloudinary } from "./upload.service.js";
 
@@ -32,49 +30,20 @@ const uploadSeedImage = async (file, subfolder) => {
   return { url: result.secure_url, publicId: result.public_id };
 };
 
-// Loads the current website content into an empty database. Returns true if it seeded.
+// Loads the starter journal articles into a database with no articles. Returns true if it seeded.
+// Services and properties are never seeded: staff create them in the workspace.
 export const seedContent = async () => {
-  if ((await ServiceCategory.estimatedDocumentCount()) > 0) return false;
+  if ((await Blog.estimatedDocumentCount()) > 0) return false;
 
   // Upload every photo first so a Cloudinary failure leaves the database untouched (retried next start).
   // One at a time, so a failure stops at the first image instead of leaving several orphans in Cloudinary.
-  const propertyImages = [];
-  for (const p of seedProperties) propertyImages.push(await uploadSeedImage(p.image.file, "properties"));
   const articleImages = [];
   for (const a of seedArticles) articleImages.push(await uploadSeedImage(a.image.file, "blog"));
 
   const now = Date.now();
-  // Earlier entries get later publish dates so the public order matches the current website.
+  // Earlier entries get later publish dates so the public order matches the seed order.
   const publishedAt = (index) => new Date(now - index * 1000);
 
-  await ServiceCategory.insertMany(
-    seedServiceCategories.map(({ number, title, description }, index) => ({ number, title, description, sortOrder: index }))
-  );
-  await Service.insertMany(
-    seedServiceCategories.flatMap((category, index) =>
-      category.services.map((service, position) => ({
-        category: category.number,
-        title: service.title,
-        description: `<p>${escapeHtml(service.copy)}</p>`,
-        icon: service.icon,
-        sortOrder: index * 100 + position,
-        status: "published",
-        publishedAt: new Date(now),
-      }))
-    )
-  );
-  await Property.insertMany(
-    seedProperties.map((property, index) => ({
-      name: property.name,
-      slug: property.slug,
-      reference: property.reference,
-      type: property.type,
-      description: property.description,
-      images: [{ ...propertyImages[index], alt: property.image.alt, position: property.image.position }],
-      status: "published",
-      publishedAt: publishedAt(index),
-    }))
-  );
   await Blog.insertMany(
     seedArticles.map((article, index) => ({
       title: article.title,
@@ -96,7 +65,7 @@ export const bootstrap = async () => {
   await ensureFirstAdmin();
   if (!env.seedContent) return;
   try {
-    if (await seedContent()) console.log("Loaded the existing website content into the database.");
+    if (await seedContent()) console.log("Loaded the starter journal articles into the database.");
   } catch (err) {
     console.error(`Seeding website content failed (will retry on next start): ${err.message}`);
   }

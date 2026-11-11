@@ -15,8 +15,8 @@ npm run dev            # http://localhost:5000/api/v1
 ```
 
 On start the server creates the first staff account from `SEED_ADMIN_*` (only if there are no users) and, when the
-database is empty, loads the current website content (5 properties, 2 service categories with 8 services, 3 articles),
-uploading the photos in `seed-assets/` to Cloudinary.
+database has no articles, loads 3 starter journal articles, uploading their photos in `seed-assets/` to Cloudinary.
+Services and properties are never seeded: staff create, publish and manage every one of them in the workspace.
 
 | Command | Purpose |
 | --- | --- |
@@ -140,7 +140,7 @@ Search (`search`) matches name, location and reference.
 | GET 🔒 | `/enquiries` | `?page=&limit=` → `{ enquiries, pagination }` (newest first) |
 | POST 🔒 | `/enquiries/:id/retry-email` | Retries a failed or pending notification → `{ enquiry }` |
 
-`enquiry` = `{ _id, name, message, emailStatus: "pending"|"sent"|"failed", createdAt, updatedAt }`. Every valid submission is stored for the authenticated admin area and emailed to `SMTP_NOTIFICATION_TO`, which defaults to `intisarof1997@gmail.com`.
+`enquiry` = `{ _id, name, message, emailStatus: "pending"|"sent"|"failed", emailError, createdAt, updatedAt }`, where `emailError` is a plain-English reason when the notification failed (otherwise `null`). Every valid submission is stored for the authenticated admin area and emailed to `SMTP_NOTIFICATION_TO`, which defaults to `intisarof1997@gmail.com`.
 
 ### Blog
 | Method | Path | Notes |

@@ -48,7 +48,10 @@ export const useTestApp = ({ seed = false } = {}) => {
     await mongoose.connection.db.dropDatabase();
     await Promise.all(Object.values(mongoose.models).map((model) => model.syncIndexes()));
     await ctx.bootstrap.createAdmin(ADMIN);
-    if (seed) await ctx.bootstrap.seedContent();
+    if (seed) {
+      await (await import("./fixtures/sampleContent.js")).loadSampleContent();
+      await ctx.bootstrap.seedContent();
+    }
   });
 };
 
