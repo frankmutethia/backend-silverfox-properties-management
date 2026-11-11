@@ -18,7 +18,7 @@ export const ServiceCategory = mongoose.model("ServiceCategory", serviceCategory
 const serviceSchema = new mongoose.Schema(
   {
     // Category number ("01" purchase, "02" management).
-    category: { type: String, enum: SERVICE_CATEGORY_NUMBERS, required: true, index: true },
+    category: { type: String, trim: true, maxlength: 150, default: "", index: true },
     title: { type: String, required: [true, "Title is required"], trim: true, maxlength: 150 },
     description: { type: String, required: [true, "Description is required"] },
     // lucide-react icon name, e.g. "KeyRound".

@@ -15,11 +15,31 @@ export const getPublishedServices = asyncHandler(async (req, res) => {
     categories(),
     Service.find({ status: "published" }).sort({ sortOrder: 1, _id: 1 }),
   ]);
+  const titles = new Map(groups.map((group) => [group.number, group.title]));
+  const normalized = services.map((service) => ({
+    ...service.toJSON(),
+    category: titles.get(service.category) ?? service.category,
+  }));
   const data = groups.map((category) => ({
     ...category.toJSON(),
-    services: services.filter((service) => service.category === category.number),
+    services: normalized.filter((service) => service.category === category.title),
   }));
-  return res.status(200).json(new ApiResponse(200, { categories: data }));
+  const knownCategories = new Set(groups.map((group) => group.number));
+  const customCategories = [...new Set(services
+    .map((service) => service.category)
+    .filter((category) => category && !knownCategories.has(category)))]
+    .map((category, index) => ({
+      number: category,
+      title: category,
+      description: "",
+      sortOrder: groups.length + index,
+      services: normalized.filter((service) => service.category === category),
+    }));
+
+  return res.status(200).json(new ApiResponse(200, {
+    categories: [...data, ...customCategories],
+    services: normalized,
+  }));
 });
 
 export const getCategories = asyncHandler(async (req, res) => {
@@ -39,7 +59,7 @@ export const updateCategory = asyncHandler(async (req, res) => {
 
 export const getAllServices = asyncHandler(async (req, res) => {
   const filter = {};
-  if (SERVICE_CATEGORY_NUMBERS.includes(req.query.category)) filter.category = req.query.category;
+  if (typeof req.query.category === "string") filter.category = req.query.category;
   if (["draft", "published"].includes(req.query.status)) filter.status = req.query.status;
   const pagination = parsePagination(req.query, { defaultLimit: 50 });
   const [services, total] = await Promise.all([

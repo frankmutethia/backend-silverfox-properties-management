@@ -1,19 +1,18 @@
 import { z } from "zod";
 import { image, objectId, status } from "./common.schema.js";
-import { SERVICE_CATEGORY_NUMBERS } from "../models/Service.model.js";
-import { plainText, sanitizeRichText } from "../utils/sanitize.js";
+import { plainText, sanitizeArticle } from "../utils/sanitize.js";
 
 const description = z
   .string()
   .max(200_000)
-  .transform(sanitizeRichText)
+  .transform(sanitizeArticle)
   .refine((html) => {
     const length = plainText(html).length;
     return length > 0 && length <= 10_000;
   }, "Enter a description of up to 10,000 characters");
 
 const fields = {
-  category: z.enum(SERVICE_CATEGORY_NUMBERS, { message: "Choose a valid service category" }),
+  category: z.string().trim().max(150).default(""),
   title: z.string().trim().min(1, "Title is required").max(150),
   description,
   icon: z.string().trim().max(40).regex(/^[A-Za-z0-9]*$/, "Use a lucide icon name, e.g. KeyRound").nullable(),

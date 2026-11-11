@@ -45,11 +45,20 @@ test("creates sanitized service drafts, publishes them and edits category text",
   await agent.patch(`${API}/services/categories/09`).send({ title: "X" }).expect(404);
 });
 
-test("rejects empty service descriptions and unknown categories", async () => {
+test("rejects empty descriptions and accepts optional custom categories and inline images", async () => {
   const agent = await signedIn();
   await agent.post(`${API}/services`).send({ category: "01", title: "X", description: "<p> </p>" }).expect(400);
-  const bad = await agent.post(`${API}/services`).send({ category: "09", title: "X", description: "Text" }).expect(400);
-  assert.match(bad.body.message, /category/);
+  const custom = await agent.post(`${API}/services`).send({ category: "Advisory", title: "X", description: '<p>Text</p><img src="https://example.com/image.jpg" alt="Home">', status: "published" }).expect(201);
+  assert.match(custom.body.data.service.description, /<img/);
+  const blank = await agent.post(`${API}/services`).send({ title: "Uncategorised", description: "Text", status: "published" }).expect(201);
+  assert.equal(blank.body.data.service.category, "");
+  const publicResponse = (await guest().get(`${API}/services`)).body.data;
+  const publicList = publicResponse.services;
+  assert.ok(publicList.some(item => item._id === custom.body.data.service._id));
+  assert.ok(publicList.some(item => item._id === blank.body.data.service._id && item.category === ""));
+  const advisory = publicResponse.categories.find(item => item.title === "Advisory");
+  assert.equal(advisory.services[0].category, "Advisory");
+  assert.ok(publicResponse.categories[0].services.every(item => item.category === publicResponse.categories[0].title));
 });
 
 test("reorders services", async () => {

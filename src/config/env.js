@@ -126,7 +126,8 @@ export const env = Object.freeze({
     const from =
       get("SMTP_FROM") ||
       (user ? `Silverfox Property Management <${user}>` : "no-reply@silverfoxpropertymanagement.com");
+    const notificationTo = get("SMTP_NOTIFICATION_TO") || "intisarof1997@gmail.com";
 
-    return { host, port, secure, user, pass, from, isConfigured: Boolean(host && user && pass) };
+    return { host, port, secure, user, pass, from, notificationTo, isConfigured: Boolean(host && user && pass) };
   })(),
 });

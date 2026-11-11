@@ -118,10 +118,10 @@ Search (`search`) matches name, location and reference.
 ### Services
 | Method | Path | Notes |
 | --- | --- | --- |
-| GET | `/services` | → `{ categories: [{ number, title, description, services: [service, ...] }] }` (published only, display order) |
+| GET | `/services` | → `{ services: [service, ...], categories: [...] }` (all published services in display order; `categories` is retained for compatibility) |
 | GET | `/services/categories` | → `{ categories: [{ _id, number, title, description, sortOrder }] }` |
 | PATCH 🔒 | `/services/categories/:number` | `{ title?, description? }` → `{ category }` |
-| GET 🔒 | `/services/admin/all` | `?category=01\|02&status=` (default limit 50) → `{ services, pagination }` |
+| GET 🔒 | `/services/admin/all` | `?category=&status=` (default limit 50) → `{ services, pagination }` |
 | GET 🔒 | `/services/admin/:id` | → `{ service }` |
 | POST 🔒 | `/services` | `{ category, title, description, icon?, image?, status? }` → `201 { service }` (added at the end) |
 | PATCH 🔒 | `/services/reorder` | `{ ids: [...] }` in display order → `{}` |
@@ -129,9 +129,18 @@ Search (`search`) matches name, location and reference.
 | PATCH 🔒 | `/services/:id/publish` | Toggle |
 | DELETE 🔒 | `/services/:id` | → `{}` |
 
-`service` = `{ _id, category: "01"|"02", title, description (HTML), icon, image: { url, publicId, alt } | null, sortOrder, status, publishedAt }`.
-`category`: `"01"` purchase services, `"02"` management services. `icon`: a lucide-react icon name (e.g. `KeyRound`).
+`service` = `{ _id, category, title, description (HTML), icon, image: { url, publicId, alt } | null, sortOrder, status, publishedAt }`.
+`category`: optional free text ≤150 characters. Each service is created and managed independently. Public responses include services without a category; seeded category codes (`"01"`, `"02"`) are replaced with their display titles. The grouped `categories` response is retained for older clients. `icon`: a lucide-react icon name (e.g. `KeyRound`).
 `description`: HTML, 1–10,000 characters of text.
+
+### Enquiries
+| Method | Path | Notes |
+| --- | --- | --- |
+| POST | `/enquiries` | `{ name, message }` → `201`; limited to 5 submissions per IP per hour. Email delivery continues in the background |
+| GET 🔒 | `/enquiries` | `?page=&limit=` → `{ enquiries, pagination }` (newest first) |
+| POST 🔒 | `/enquiries/:id/retry-email` | Retries a failed or pending notification → `{ enquiry }` |
+
+`enquiry` = `{ _id, name, message, emailStatus: "pending"|"sent"|"failed", createdAt, updatedAt }`. Every valid submission is stored for the authenticated admin area and emailed to `SMTP_NOTIFICATION_TO`, which defaults to `intisarof1997@gmail.com`.
 
 ### Blog
 | Method | Path | Notes |

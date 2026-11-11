@@ -7,6 +7,7 @@ import blogRoutes from "./blog.routes.js";
 import testimonialRoutes from "./testimonial.routes.js";
 import dashboardRoutes from "./dashboard.routes.js";
 import userRoutes from "./user.routes.js";
+import enquiryRoutes from "./enquiry.routes.js";
 
 const router = Router();
 
@@ -22,5 +23,6 @@ router.use("/blog", blogRoutes);
 router.use("/testimonials", testimonialRoutes);
 router.use("/admin", dashboardRoutes);
 router.use("/users", userRoutes);
+router.use("/enquiries", enquiryRoutes);
 
 export default router;

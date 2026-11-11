@@ -7,11 +7,27 @@ import { RESET_TOKEN_MINUTES } from "../models/User.model.js";
 const createTransport = () => {
   if (!env.smtp.isConfigured) return null;
   return nodemailer.createTransport({
+    connectionTimeout: 10000,
+    socketTimeout: 15000,
     host: env.smtp.host,
     port: env.smtp.port,
     secure: env.smtp.secure,
     auth: { user: env.smtp.user, pass: env.smtp.pass },
   });
+};
+
+export const sendEnquiryNotificationEmail = async (enquiry) => {
+  const transport = createTransport();
+  if (!transport) throw new Error("SMTP is not configured");
+  if (!env.smtp.notificationTo) throw new Error("SMTP notification recipient is not configured");
+  const result = await transport.sendMail({
+    from: env.smtp.from,
+    to: env.smtp.notificationTo,
+    subject: "New Silverfox property enquiry",
+    text: `Name: ${enquiry.name}\n\n${enquiry.message}\n\nReference: ${enquiry._id}`,
+    html: `<h2>New enquiry</h2><p><strong>Name:</strong> ${escapeHtml(enquiry.name)}</p><p>${escapeHtml(enquiry.message).replace(/\n/g, "<br>")}</p>`,
+  });
+  if (!result.accepted?.length) throw new Error("Email was not accepted");
 };
 
 export const verifySmtpConnection = async () => {
